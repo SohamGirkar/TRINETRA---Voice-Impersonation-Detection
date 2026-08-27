@@ -1,0 +1,106 @@
+# =========================
+# PYTHON
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# =========================
+# ENV / SECRETS
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# ASVSPOOF DATASET
+# =========================
+# DO NOT upload the Kaggle dataset to GitHub
+data/raw/*
+data/processed/*
+
+# Keep the folders in Git
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# =========================
+# ML MODEL FILES
+# =========================
+# Trained model weights can be huge
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.h5
+*.keras
+*.joblib
+*.pkl
+
+# Model checkpoints
+model/checkpoints/*
+!model/checkpoints/.gitkeep
+
+# =========================
+# JUPYTER
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# FRONTEND / NODE
+# =========================
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# Frontend environment variables
+frontend/.env
+frontend/.env.*
+
+# =========================
+# LOGS
+# =========================
+*.log
+logs/
+
+# =========================
+# TEMPORARY AUDIO
+# =========================
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+
+# IMPORTANT:
+# If you want to keep a few demo samples in Git,
+# put them in data/samples/ and use the exception below.
+!data/samples/
+!data/samples/README.md
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# TEMPORARY FILES
+# =========================
+*.tmp
+*.temp
+*.cache
