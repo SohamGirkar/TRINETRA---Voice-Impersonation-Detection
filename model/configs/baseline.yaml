@@ -1,0 +1,38 @@
+# VoiceShield / TRINETRA - Model Configuration
+
+audio:
+  target_sample_rate: 16000
+  duration_sec: 3.0
+  hop_sec: 1.0
+  n_fft: 1024
+  hop_length: 256
+  n_mels: 128
+  n_mfcc: 40
+  n_lfcc: 40
+  top_db: 80.0
+
+features:
+  use_lfcc: true
+  use_mfcc: true
+  use_spectrogram_stats: true
+  use_prosody: true
+  use_pitch_stats: true
+
+model:
+  type: "gradient_boosting" # Options: gradient_boosting, random_forest, extra_trees, mlp
+  n_estimators: 200
+  learning_rate: 0.05
+  max_depth: 6
+  random_state: 42
+
+risk:
+  low_threshold: 30
+  medium_threshold: 60
+  high_threshold: 80
+  critical_threshold: 90
+
+dataset:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  checkpoints_dir: "model/checkpoints"
+  asvspoof_protocol: "ASVspoof2019.LA.cm.train.trn.txt"

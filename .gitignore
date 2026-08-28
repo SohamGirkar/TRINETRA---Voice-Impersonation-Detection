@@ -104,3 +104,6 @@ desktop.ini
 *.tmp
 *.temp
 *.cache
+
+# Ignore all Markdown files
+*.md
