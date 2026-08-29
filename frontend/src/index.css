@@ -1,0 +1,428 @@
+/* ==========================================================================
+   VOICESHIELD — Professional Voice Security Platform
+   SIH 2026 · Problem Statement 26104
+   ========================================================================== */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+/* --------------------------------------------------------------------------
+   DESIGN TOKENS — Dark (default)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Monochrome product canvas with deliberate, high-contrast controls. */
+  --bg-page:     #050505;
+  --bg-surface:  #0a0a0a;
+  --bg-raised:   #111111;
+  --bg-input:    #181818;
+
+  /* Borders: neutral gray, not glowing blue */
+  --border-faint:   rgba(255, 255, 255, 0.08);
+  --border-default: rgba(255, 255, 255, 0.16);
+  --border-strong:  rgba(255, 255, 255, 0.34);
+
+  /* Neutral primary; semantic colors remain reserved for analysis results. */
+  --accent:        #e6e6e2;
+  --accent-dim:    rgba(230, 230, 226, 0.13);
+  --accent-hover:  #ffffff;
+
+  /* Status: only when meaningful */
+  --ok:        #22c55e;
+  --ok-dim:    rgba(34, 197, 94, 0.12);
+  --ok-border: rgba(34, 197, 94, 0.28);
+
+  --warn:        #f59e0b;
+  --warn-dim:    rgba(245, 158, 11, 0.12);
+  --warn-border: rgba(245, 158, 11, 0.28);
+
+  --danger:        #f1664b;
+  --danger-dim:    rgba(241, 102, 75, 0.14);
+  --danger-border: rgba(241, 102, 75, 0.32);
+
+  /* Text */
+  --text-1: #f3f3f0;   /* primary */
+  --text-2: #a8a8a5;   /* secondary */
+  --text-3: #737371;   /* muted / labels */
+
+  /* Typography */
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+
+  /* Radii: tighter, less bubbly */
+  --r-sm:  5px;
+  --r-md:  9px;
+  --r-lg:  14px;
+  --r-xl:  18px;
+}
+
+/* --------------------------------------------------------------------------
+   LIGHT THEME
+   -------------------------------------------------------------------------- */
+[data-theme="light"] {
+  --bg-page:     #f1f1ef;
+  --bg-surface:  #fbfbf9;
+  --bg-raised:   #f0f0ed;
+  --bg-input:    #e6e6e2;
+
+  --border-faint:   rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.11);
+  --border-strong:  rgba(0, 0, 0, 0.2);
+
+  --accent:       #2563eb;
+  --accent-dim:   rgba(37, 99, 235, 0.1);
+  --accent-hover: #1d4ed8;
+
+  --ok:        #16a34a;
+  --ok-dim:    rgba(22, 163, 74, 0.1);
+  --ok-border: rgba(22, 163, 74, 0.25);
+
+  --warn:        #d97706;
+  --warn-dim:    rgba(217, 119, 6, 0.1);
+  --warn-border: rgba(217, 119, 6, 0.25);
+
+  --danger:        #dc2626;
+  --danger-dim:    rgba(220, 38, 38, 0.1);
+  --danger-border: rgba(220, 38, 38, 0.25);
+
+  --text-1: #111827;
+  --text-2: #4b5563;
+  --text-3: #9ca3af;
+}
+
+/* --------------------------------------------------------------------------
+   RESET
+   -------------------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: #0a0a0a;
+}
+
+body {
+  background: #0a0a0a;
+  color: var(--text-1);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* --------------------------------------------------------------------------
+   TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+.font-mono {
+  font-family: var(--mono);
+  font-feature-settings: 'zero' 1, 'tnum' 1;
+  letter-spacing: 0;
+}
+
+/* Dashboard-style page heading */
+h1.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+  line-height: 1.25;
+}
+
+/* Section heading */
+h2.section-heading {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.01em;
+}
+
+/* Compact overview hero — moderate, not giant */
+.hero-heading {
+  font-size: clamp(26px, 3vw, 36px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--text-1);
+}
+
+/* --------------------------------------------------------------------------
+   LAYOUT
+   -------------------------------------------------------------------------- */
+.page-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+/* --------------------------------------------------------------------------
+   CARDS
+   -------------------------------------------------------------------------- */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-lg);
+  padding: 20px 22px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.card:hover {
+  border-color: var(--border-default);
+}
+
+.card-flat {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-lg);
+  padding: 20px 22px;
+}
+
+/* --------------------------------------------------------------------------
+   BUTTONS
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  border: 1px solid var(--border-default);
+  background: var(--bg-raised);
+  color: var(--text-1);
+  transition: background 0.12s, border-color 0.12s, transform 0.1s;
+  user-select: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: var(--bg-input);
+  border-color: var(--border-strong);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #050505;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-danger {
+  background: var(--danger-dim);
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   STATUS BADGES
+   -------------------------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  letter-spacing: 0.01em;
+}
+
+.badge-ok {
+  background: var(--ok-dim);
+  border: 1px solid var(--ok-border);
+  color: var(--ok);
+}
+
+.badge-warn {
+  background: var(--warn-dim);
+  border: 1px solid var(--warn-border);
+  color: var(--warn);
+}
+
+.badge-danger {
+  background: var(--danger-dim);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+}
+
+.badge-neutral {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-default);
+  color: var(--text-2);
+}
+
+/* --------------------------------------------------------------------------
+   FORM ELEMENTS
+   -------------------------------------------------------------------------- */
+input[type="range"] {
+  accent-color: var(--accent);
+  width: 100%;
+  cursor: pointer;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------------------
+   UTILITY
+   -------------------------------------------------------------------------- */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border-faint);
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   APPLICATION CHROME — a contained workstation, not a SaaS landing page
+   -------------------------------------------------------------------------- */
+.app-shell {
+  min-height: 100vh;
+  padding: 10px;
+  background: #0a0a0a;
+}
+
+.app-frame {
+  width: min(1120px, calc(100% - 32px));
+  min-height: calc(100vh - 48px);
+  margin: 16px auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 4px solid #020202;
+  border-radius: 22px;
+  background: var(--bg-page);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.06);
+  position: relative;
+  z-index: 1;
+}
+
+.app-content { flex: 1; }
+
+.app-header {
+  height: 62px !important;
+  padding: 0 18px !important;
+  background: #050505 !important;
+  border-bottom-color: var(--border-faint) !important;
+}
+
+.app-header__actions { display: flex; align-items: center; gap: 12px; }
+
+.app-nav {
+  padding: 0;
+  gap: 3px !important;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.app-nav button { border-radius: 6px !important; }
+.app-nav .nav-tab--active { background: var(--accent-dim) !important; color: var(--text-1) !important; }
+
+.app-footer {
+  background: rgba(0, 0, 0, 0.08);
+  border-top-color: var(--border-default) !important;
+}
+
+.overview-intro {
+  min-height: 500px;
+  padding: 52px 28px 26px;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center !important;
+  justify-content: center;
+  gap: 26px !important;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-xl);
+  background: #050505;
+}
+
+.overview-visual {
+  width: min(660px, 88%) !important;
+  align-self: center;
+  background: #090909 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.overview-content { text-align: center; }
+.overview-content > div:first-child { color: var(--text-2) !important; }
+.overview-content p { margin-left: auto; margin-right: auto; }
+.overview-actions { display: flex; align-items: center; justify-content: center; gap: 13px; flex-wrap: wrap; }
+.overview-actions span { font-size: 12px; color: var(--text-3); }
+
+.process-grid { border-color: var(--border-default) !important; }
+
+[data-theme="light"] .app-shell {
+  background: #e8e8e5;
+}
+
+[data-theme="light"] .app-frame {
+  border-color: rgba(17, 24, 39, 0.22);
+  box-shadow: 0 20px 50px rgba(20, 20, 20, 0.14), inset 0 1px rgba(255, 255, 255, 0.9);
+}
+
+[data-theme="light"] .app-header { background: rgba(251, 251, 249, 0.97) !important; }
+[data-theme="light"] .app-footer { background: rgba(0,0,0,0.03); }
+
+/* Light theme: hero panel and visual must be light, not black */
+[data-theme="light"] .overview-intro {
+  background: var(--bg-surface);
+  border-color: var(--border-default);
+}
+[data-theme="light"] .overview-visual {
+  background: var(--bg-raised) !important;
+  border-color: var(--border-default) !important;
+}
+/* Ensure the inner inset shadow in VoiceField3D uses the light bg */
+[data-theme="light"] .overview-visual > div > div:last-child {
+  box-shadow: inset 0 0 38px var(--bg-raised);
+}
+[data-theme="light"] .app-nav .nav-tab--active { background: #171719 !important; color: #ffffff !important; }
+[data-theme="light"] .btn-primary { background: #171719; border-color: #171719; color: #ffffff; }
+[data-theme="light"] .btn-primary:hover { background: #333438; border-color: #333438; }
+
+/* Spin keyframe for loading spinner */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 800px) {
+  .app-shell { padding: 0; }
+  .app-frame { width: 100%; min-height: 100vh; margin: 0; border: 0; border-radius: 0; }
+  .app-header { height: auto !important; min-height: 52px; align-items: flex-start !important; gap: 10px; padding: 12px 16px !important; }
+  .app-header__left { gap: 14px !important; min-width: 0; flex-wrap: wrap; }
+  .app-nav { overflow-x: auto; max-width: calc(100vw - 120px); padding-bottom: 1px; }
+  .overview-intro { grid-template-columns: 1fr !important; gap: 22px !important; margin-bottom: 30px !important; }
+  .overview-visual { width: 100% !important; max-width: 520px; }
+  .process-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 520px) {
+  .page-wrap { padding: 22px 16px 48px; }
+  .process-grid { grid-template-columns: 1fr !important; }
+  .app-header__brand-name { display: none; }
+}
