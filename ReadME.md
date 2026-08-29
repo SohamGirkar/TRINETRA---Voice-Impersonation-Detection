@@ -8,7 +8,7 @@ Problem Statement: 26104
 ## Team
 
 Soham
-Partner Name
+Pranjal Mohare
 
 ## Architecture
 
