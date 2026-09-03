@@ -7,7 +7,7 @@ Problem Statement: 26104
 
 ## Team
 
-Soham
+Soham Girkar &
 Pranjal Mohare
 
 ## Architecture
