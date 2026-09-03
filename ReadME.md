@@ -35,3 +35,7 @@ ASVspoof 2019
 - Risk scoring
 - Audio preprocessing
 - ...
+
+
+To turn on backend 
+    PS C:\Users\soham\OneDrive\Documents\TRINETRA> uvicorn app.main:app --reload

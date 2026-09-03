@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Upload, Mic, MicOff, FileAudio, Loader2, ArrowRight, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { TelemetryState } from '../types/telemetry';
+import { apiService } from '../services/api';
 
 interface AnalyzeCallProps {
   telemetry: TelemetryState;
@@ -61,49 +62,75 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
   onNavigateToDetails,
   onAnalysisComplete,
 }) => {
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
 
-  const runAnalysis = (isClone: boolean, scenarioId = 'scenario_clean_demo') => {
-    setIsAnalyzing(true);
-    setStepIndex(0);
-    setResult(null);
+  const runAnalysis = async (
+  isClone: boolean,
+  scenarioId = 'scenario_clean_demo'
+) => {
+  if (!selectedFile) {
+    alert('Please upload an audio file first.');
+    return;
+  }
 
-    let i = 0;
-    const tick = setInterval(() => {
-      i++;
-      if (i < STEPS.length) {
-        setStepIndex(i);
-      } else {
-        clearInterval(tick);
-        setIsAnalyzing(false);
-        onAnalysisComplete?.(scenarioId);
-        setResult(
-          isClone
-            ? {
-                riskScore: 91,
-                riskLevel: 'High risk',
-                why: 'Synthetic voice markers and significant divergence from natural pitch dynamics were detected.',
-                speakerMatch: 32,
-                syntheticLevel: 'High',
-                audioQuality: 'Good',
-                recommendation: 'Verify the caller independently before approving any sensitive action.',
-              }
-            : {
-                riskScore: 12,
-                riskLevel: 'Low risk',
-                why: 'Voice characteristics, pitch naturalness, and spectral continuity are consistent with authentic speech.',
-                speakerMatch: 94,
-                syntheticLevel: 'Low',
-                audioQuality: 'Good',
-                recommendation: 'No action required. Continue monitoring.',
-              }
-        );
-      }
-    }, 850);
-  };
+  setIsAnalyzing(true);
+  setStepIndex(0);
+  setResult(null);
+
+  let i = 0;
+
+  const tick = setInterval(() => {
+    i++;
+
+    if (i < STEPS.length) {
+      setStepIndex(i);
+    } else {
+      clearInterval(tick);
+    }
+  }, 850);
+
+  try {
+    // Send the selected audio file to the Python backend
+    const backendResult = await apiService.analyzeAudio(selectedFile);
+
+    // Wait until the analysis animation finishes
+    await new Promise((resolve) => setTimeout(resolve, STEPS.length * 850));
+
+    clearInterval(tick);
+    setIsAnalyzing(false);
+
+    // Convert backend response into the format expected by the frontend
+    setResult({
+      riskScore: backendResult.impersonation_risk_score,
+      riskLevel: backendResult.risk_level,
+      why: backendResult.evidence?.join(' ') || 'Analysis completed.',
+      speakerMatch: 0,
+      syntheticLevel:
+        backendResult.synthetic_probability >= 0.5
+          ? 'High'
+          : 'Low',
+      audioQuality: 'Good',
+      recommendation: backendResult.recommended_action,
+    });
+
+    onAnalysisComplete?.(scenarioId);
+
+  } catch (error) {
+    clearInterval(tick);
+    setIsAnalyzing(false);
+
+    console.error('Analysis failed:', error);
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : 'Failed to analyze the audio.'
+    );
+  }
+};
 
   const isHigh = (result?.riskScore ?? 0) >= 65;
 
@@ -150,7 +177,9 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
 
         <div>
           <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '4px' }}>
-            {selectedFile ?? 'Drop an audio file here, or choose one below'}
+            {selectedFile
+                  ? selectedFile.name
+                    : 'Drop an audio file here, or choose one below'}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-3)' }}>
             Supports WAV, MP3, M4A, FLAC
@@ -166,9 +195,11 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
               accept="audio/*"
               style={{ display: 'none' }}
               onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) { setSelectedFile(f.name); setResult(null); }
-              }}
+                const file = e.target.files?.[0];
+                if (file) {+
+                setSelectedFile(file);
+              }
+            }}
             />
           </label>
 
@@ -187,7 +218,7 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
         {selectedFile && !isAnalyzing && !result && (
           <button
             className="btn btn-primary"
-            onClick={() => runAnalysis(selectedFile.toLowerCase().includes('clone'))}
+            onClick={() => runAnalysis(false)}
           >
             Run analysis
             <ArrowRight size={14} />
@@ -343,11 +374,14 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
               key={s.id}
               className="card"
               style={{
-                cursor: 'pointer',
-                borderColor: selectedFile === s.filename ? 'var(--accent)' : 'var(--border-faint)',
-              }}
+  cursor: 'pointer',
+  borderColor:
+    selectedFile?.name === s.filename
+      ? 'var(--accent)'
+      : 'var(--border-faint)',
+}}
               onClick={() => {
-                setSelectedFile(s.filename);
+                setSelectedFile(null);
                 setResult(null);
                 runAnalysis(
                   s.isClone,
