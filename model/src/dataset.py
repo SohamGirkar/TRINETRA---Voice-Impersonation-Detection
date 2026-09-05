@@ -108,8 +108,10 @@ class AudioDatasetLoader:
             print(f"[Dataset] Found {len(df_dir)} directory-structured samples.")
             return df_dir
 
-        print("[Dataset] No raw audio found in data/raw. Generating benchmark synthetic sample dataset...")
-        return self.generate_synthetic_sample_dataset()
+        raise FileNotFoundError(
+    f"[Dataset] No real audio dataset found in '{self.raw_dir}'. "
+    "Please place the ASVspoof dataset in data/raw."
+)
 
     def generate_synthetic_sample_dataset(self, num_genuine=100, num_synthetic=100):
         """Generates synthetic benchmark audio samples for pipeline verification if raw data isn't ready."""
