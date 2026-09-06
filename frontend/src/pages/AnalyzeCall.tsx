@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Upload, Mic, MicOff, FileAudio, Loader2, ArrowRight, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Upload, Mic, MicOff, FileAudio, Loader2, ArrowRight, ShieldAlert, ShieldCheck, RefreshCw } from 'lucide-react';
 import { TelemetryState } from '../types/telemetry';
 import { apiService } from '../services/api';
+import { historyService } from '../services/historyService';
 
 interface AnalyzeCallProps {
   telemetry: TelemetryState;
@@ -53,7 +54,37 @@ type Result = {
   syntheticLevel: string;
   audioQuality: string;
   recommendation: string;
+  evidence: string[];
 };
+
+function formatEvidenceItem(item: string): { plain: string; technical?: string } {
+  const lower = item.toLowerCase();
+  if (lower.includes('vocoder') || lower.includes('lfcc')) {
+    return {
+      plain: 'Unusual digital patterns detected in the voice frequencies.',
+      technical: 'High-frequency vocoder spectral artifact (LFCC anomaly)',
+    };
+  }
+  if (lower.includes('pitch stability') || lower.includes('synthetic harmonic')) {
+    return {
+      plain: 'The voice pitch is unnaturally steady, characteristic of computer-generated speech.',
+      technical: 'Synthetic harmonic energy profile / unnatural pitch stability',
+    };
+  }
+  if (lower.includes('natural spectral dynamics') || lower.includes('acoustic voice variance')) {
+    return {
+      plain: 'Acoustic voice variance and sound frequencies match natural human speech.',
+      technical: 'Natural spectral dynamics and acoustic voice variance',
+    };
+  }
+  if (lower.includes('pitch contour') || lower.includes('formant transitions')) {
+    return {
+      plain: 'Pitch modulation and vocal tract transitions match an authentic human speaker.',
+      technical: 'Pitch contour and formant transitions match natural speech profile',
+    };
+  }
+  return { plain: item };
+}
 
 export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
   telemetry,
@@ -67,70 +98,100 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
   const [stepIndex, setStepIndex] = useState(0);
   const [result, setResult] = useState<Result | null>(null);
 
+  const handleResetForNewAnalysis = () => {
+    setSelectedFile(null);
+    setResult(null);
+    setIsAnalyzing(false);
+    setStepIndex(0);
+  };
+
   const runAnalysis = async (
-  isClone: boolean,
-  scenarioId = 'scenario_clean_demo'
-) => {
-  if (!selectedFile) {
-    alert('Please upload an audio file first.');
-    return;
-  }
-
-  setIsAnalyzing(true);
-  setStepIndex(0);
-  setResult(null);
-
-  let i = 0;
-
-  const tick = setInterval(() => {
-    i++;
-
-    if (i < STEPS.length) {
-      setStepIndex(i);
-    } else {
-      clearInterval(tick);
+    isClone: boolean,
+    scenarioId = 'scenario_clean_demo'
+  ) => {
+    if (!selectedFile) {
+      alert('Please upload an audio file first.');
+      return;
     }
-  }, 850);
 
-  try {
-    // Send the selected audio file to the Python backend
-    const backendResult = await apiService.analyzeAudio(selectedFile);
+    setIsAnalyzing(true);
+    setStepIndex(0);
+    setResult(null);
 
-    // Wait until the analysis animation finishes
-    await new Promise((resolve) => setTimeout(resolve, STEPS.length * 850));
+    let i = 0;
 
-    clearInterval(tick);
-    setIsAnalyzing(false);
+    const tick = setInterval(() => {
+      i++;
+      if (i < STEPS.length) {
+        setStepIndex(i);
+      } else {
+        clearInterval(tick);
+      }
+    }, 850);
 
-    // Convert backend response into the format expected by the frontend
-    setResult({
-      riskScore: backendResult.impersonation_risk_score,
-      riskLevel: backendResult.risk_level,
-      why: backendResult.evidence?.join(' ') || 'Analysis completed.',
-      speakerMatch: 0,
-      syntheticLevel:
-        backendResult.synthetic_probability >= 0.5
-          ? 'High'
-          : 'Low',
-      audioQuality: 'Good',
-      recommendation: backendResult.recommended_action,
-    });
+    try {
+      // Send the selected audio file to the Python backend
+      const backendResult = await apiService.analyzeAudio(selectedFile);
 
-    onAnalysisComplete?.(scenarioId);
+      // Wait until the analysis animation finishes
+      await new Promise((resolve) => setTimeout(resolve, STEPS.length * 850));
 
-  } catch (error) {
-    clearInterval(tick);
-    setIsAnalyzing(false);
+      clearInterval(tick);
+      setIsAnalyzing(false);
 
-    console.error('Analysis failed:', error);
+      const score = Math.round(backendResult.impersonation_risk_score);
+      const riskLevel = backendResult.risk_level;
+      const evidenceList = backendResult.evidence || [];
 
-    alert(
-      error instanceof Error
-        ? error.message
-        : 'Failed to analyze the audio.'
-    );
-  }
-};
+      // Convert backend response into the format expected by the frontend
+      setResult({
+        riskScore: score,
+        riskLevel: riskLevel,
+        why: evidenceList.join(' ') || 'Analysis completed.',
+        speakerMatch: Math.max(10, Math.round(100 - score)),
+        syntheticLevel:
+          backendResult.synthetic_probability >= 0.5
+            ? 'High'
+            : 'Low',
+        audioQuality: 'Good',
+        recommendation: backendResult.recommended_action,
+        evidence: evidenceList,
+      });
+
+      // Save to real persistent history
+      historyService.addRecord({
+        callTitle: selectedFile.name,
+        caller: `${(selectedFile.size / 1024).toFixed(0)} KB · Audio upload`,
+        riskScore: score,
+        result: `${riskLevel.charAt(0) + riskLevel.slice(1).toLowerCase()} Risk`,
+        summary: evidenceList.length ? evidenceList.join(' ') : backendResult.recommended_action,
+        confidenceScore: backendResult.confidence_score,
+        syntheticProbability: backendResult.synthetic_probability,
+        recommendation: backendResult.recommended_action,
+        evidence: evidenceList,
+      });
+
+      const targetScenario = (riskLevel === 'CRITICAL' || riskLevel === 'HIGH')
+        ? 'scenario_bank_fraud'
+        : (riskLevel === 'MEDIUM')
+        ? 'scenario_noisy_office'
+        : 'scenario_clean_demo';
+
+      onAnalysisComplete?.(targetScenario);
+
+    } catch (error) {
+      clearInterval(tick);
+      setIsAnalyzing(false);
+
+      console.error('Analysis failed:', error);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'Failed to analyze the audio.'
+      );
+    }
+  };
 
   const isHigh = (result?.riskScore ?? 0) >= 65;
 
@@ -151,7 +212,7 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
         className="card-flat"
         style={{
           textAlign: 'center',
-          padding: '48px 36px',
+          padding: '44px 32px',
           border: '2px dashed var(--border-default)',
           marginBottom: '24px',
           display: 'flex',
@@ -178,28 +239,30 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
         <div>
           <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)', marginBottom: '4px' }}>
             {selectedFile
-                  ? selectedFile.name
-                    : 'Drop an audio file here, or choose one below'}
+              ? selectedFile.name
+              : 'Drop an audio file here, or choose one below'}
           </div>
           <div style={{ fontSize: '13px', color: 'var(--text-3)' }}>
-            Supports WAV, MP3, M4A, FLAC
+            Supports WAV, MP3, M4A, FLAC, OGG
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
           <label className="btn btn-primary" style={{ cursor: 'pointer' }}>
             <Upload size={14} />
-            Choose audio
+            {selectedFile ? 'Change audio file' : 'Choose audio'}
             <input
               type="file"
               accept="audio/*"
               style={{ display: 'none' }}
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) {+
-                setSelectedFile(file);
-              }
-            }}
+                if (file) {
+                  setSelectedFile(file);
+                  setResult(null); // Clear previous completed result so user can analyze new file immediately
+                }
+                e.target.value = '';
+              }}
             />
           </label>
 
@@ -207,7 +270,7 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
             className={isMicActive ? 'btn btn-danger' : 'btn'}
             onClick={() => {
               onToggleMic();
-               if (!isMicActive) runAnalysis(false, 'scenario_live_mic');
+              if (!isMicActive) runAnalysis(false, 'scenario_live_mic');
             }}
           >
             {isMicActive ? <MicOff size={14} /> : <Mic size={14} />}
@@ -219,6 +282,7 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
           <button
             className="btn btn-primary"
             onClick={() => runAnalysis(false)}
+            style={{ marginTop: '6px' }}
           >
             Run analysis
             <ArrowRight size={14} />
@@ -266,7 +330,7 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
             borderColor: isHigh ? 'var(--danger-border)' : 'var(--ok-border)',
           }}
         >
-          {/* Top: verdict + navigate */}
+          {/* Top: verdict + action buttons */}
           <div
             style={{
               display: 'flex',
@@ -294,17 +358,61 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
                 </span>
               </h2>
             </div>
-            {onNavigateToDetails && (
-              <button className="btn" onClick={onNavigateToDetails}>
-                View analysis details
-                <ArrowRight size={14} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-primary"
+                onClick={handleResetForNewAnalysis}
+              >
+                <RefreshCw size={14} />
+                Analyze another file
               </button>
-            )}
+              {onNavigateToDetails && (
+                <button className="btn" onClick={onNavigateToDetails}>
+                  View analysis details
+                  <ArrowRight size={14} />
+                </button>
+              )}
+            </div>
           </div>
 
-          <p style={{ fontSize: '14px', color: 'var(--text-1)', lineHeight: 1.6, marginBottom: '18px' }}>
-            {result.why}
-          </p>
+          {/* Plain language summary & evidence */}
+          {result.evidence && result.evidence.length > 0 ? (
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                Acoustic Analysis Signals
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {result.evidence.map((ev, i) => {
+                  const formatted = formatEvidenceItem(ev);
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border-faint)',
+                        borderRadius: 'var(--r-md)',
+                        padding: '10px 14px',
+                      }}
+                    >
+                      <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-1)' }}>
+                        {formatted.plain}
+                      </div>
+                      {formatted.technical && (
+                        <div style={{ fontSize: '11px', color: 'var(--text-3)', marginTop: '3px' }}>
+                          Technical signal: <span className="font-mono">{formatted.technical}</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <p style={{ fontSize: '14px', color: 'var(--text-1)', lineHeight: 1.6, marginBottom: '18px' }}>
+              {result.why}
+            </p>
+          )}
 
           {/* Signal grid */}
           <div
@@ -374,19 +482,14 @@ export const AnalyzeCall: React.FC<AnalyzeCallProps> = ({
               key={s.id}
               className="card"
               style={{
-  cursor: 'pointer',
-  borderColor:
-    selectedFile?.name === s.filename
-      ? 'var(--accent)'
-      : 'var(--border-faint)',
-}}
+                cursor: 'pointer',
+                borderColor:
+                  selectedFile?.name === s.filename
+                    ? 'var(--accent)'
+                    : 'var(--border-faint)',
+              }}
               onClick={() => {
-                setSelectedFile(null);
-                setResult(null);
-                runAnalysis(
-                  s.isClone,
-                  s.expectedLabel.includes('Moderate') ? 'scenario_degraded_demo' : s.isClone ? 'scenario_clone_demo' : 'scenario_clean_demo',
-                );
+                alert(`Demo samples are for reference only. Please upload a real audio file (WAV, MP3, M4A, FLAC) using the "Choose audio" button above.`);
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>

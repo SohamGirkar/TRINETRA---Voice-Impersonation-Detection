@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TelemetryState } from '../types/telemetry';
 import { ChevronDown, ChevronUp, Cpu, Activity, Fingerprint, Sparkles, Radio, FileSearch } from 'lucide-react';
+import { Tooltip } from '../components/common/Tooltip';
 
 interface AnalysisDetailsProps {
   telemetry: TelemetryState;
@@ -70,24 +71,28 @@ export const AnalysisDetails: React.FC<AnalysisDetailsProps> = ({
       dim: speaker,
       accentColor: 'var(--accent)',
       showBar: true,
+      tooltip: 'Measures acoustic similarity against enrolled biometric speaker profiles using ECAPA-TDNN neural embeddings.',
     },
     {
       icon: <Activity size={15} style={{ color: '#818cf8' }} />,
       dim: prosody,
       accentColor: '#818cf8',
       showBar: false,
+      tooltip: 'Analyzes pitch modulation (F0), intonation rhythms, and breathing cadence for natural vocal variance.',
     },
     {
       icon: <Sparkles size={15} style={{ color: isHigh ? 'var(--danger)' : 'var(--accent)' }} />,
       dim: synthetic,
       accentColor: isHigh ? 'var(--danger)' : 'var(--accent)',
       showBar: false,
+      tooltip: 'Detects high-frequency vocoder spectral artifacts (LFCC anomalies), synthetic phase consistency, and cloning fingerprints.',
     },
     {
       icon: <Radio size={15} style={{ color: 'var(--accent)' }} />,
       dim: quality,
       accentColor: 'var(--accent)',
       showBar: false,
+      tooltip: 'Assesses signal-to-noise ratio, bandwidth, clipping, and channel compression to ensure reliable detection.',
     },
   ];
 
@@ -136,7 +141,7 @@ export const AnalysisDetails: React.FC<AnalysisDetailsProps> = ({
           marginBottom: '24px',
         }}
       >
-        {dims.map(({ icon, dim, accentColor, showBar }, idx) => (
+        {dims.map(({ icon, dim, accentColor, showBar, tooltip }, idx) => (
           <div key={dim.id} className="card-flat">
             {/* Header row */}
             <div
@@ -152,6 +157,7 @@ export const AnalysisDetails: React.FC<AnalysisDetailsProps> = ({
                 <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-1)' }}>
                   {idx + 1}. {dim.title}
                 </span>
+                <Tooltip content={tooltip} iconOnly />
               </div>
               <span className={statusClass(dim.statusType)}>
                 {dim.statusLabel}
@@ -283,17 +289,47 @@ export const AnalysisDetails: React.FC<AnalysisDetailsProps> = ({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                 gap: '12px',
               }}
             >
               {[
-                { label: 'ECAPA-TDNN cosine similarity', value: (telemetry.speakerMatchScore / 100).toFixed(3) },
-                { label: 'FFT window / hop size', value: '1024 pt / 128' },
-                { label: 'Processing latency', value: '1.8 ms' },
-                { label: 'Model confidence', value: '96.1%' },
-                { label: 'Sample rate', value: '48,000 Hz' },
-                { label: 'MFCC coefficients', value: '13 cepstral' },
+                {
+                  label: 'ECAPA-TDNN cosine similarity',
+                  simple: 'Voice likeness score',
+                  tooltip: 'Shows how closely the analyzed voice matches the reference voice.',
+                  value: (telemetry.speakerMatchScore / 100).toFixed(3),
+                },
+                {
+                  label: 'FFT window / hop size',
+                  simple: 'Frequency sampling rate',
+                  tooltip: 'Technical settings used to examine how the audio frequencies change over time.',
+                  value: '1024 pt / 128',
+                },
+                {
+                  label: 'Processing latency',
+                  simple: 'Inference speed',
+                  tooltip: 'How long the system took to analyze the audio recording.',
+                  value: '1.8 ms',
+                },
+                {
+                  label: 'Model confidence',
+                  simple: 'Detection certainty',
+                  tooltip: 'How confident the detection model is in its spoof assessment.',
+                  value: '96.1%',
+                },
+                {
+                  label: 'Sample rate',
+                  simple: 'Audio resolution',
+                  tooltip: 'The number of audio frequency snapshots recorded per second.',
+                  value: '48,000 Hz',
+                },
+                {
+                  label: 'MFCC coefficients',
+                  simple: 'Vocal tract features',
+                  tooltip: 'Features extracted from the audio that help the system understand vocal characteristics.',
+                  value: '13 cepstral',
+                },
               ].map((m) => (
                 <div
                   key={m.label}
@@ -304,7 +340,13 @@ export const AnalysisDetails: React.FC<AnalysisDetailsProps> = ({
                     padding: '12px 14px',
                   }}
                 >
-                  <div style={{ fontSize: '11px', color: 'var(--text-3)', marginBottom: '3px' }}>{m.label}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginBottom: '3px' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-3)' }}>{m.label}</span>
+                    <Tooltip content={m.tooltip} iconOnly />
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--accent)', marginBottom: '4px' }}>
+                    {m.simple}
+                  </div>
                   <div className="font-mono" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-1)' }}>
                     {m.value}
                   </div>

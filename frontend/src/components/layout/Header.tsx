@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ActiveTab } from '../../types/navigation';
 import { LogoMark } from '../common/LogoMark';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, Menu, X } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -24,13 +24,20 @@ export const Header: React.FC<HeaderProps> = ({
   isMicActive,
   onToggleMic,
 }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleTabClick = (tabId: ActiveTab) => {
+    onTabChange(tabId);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <header
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        height: '52px',
+        height: '62px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -41,10 +48,10 @@ export const Header: React.FC<HeaderProps> = ({
       className="app-header"
     >
       {/* Brand */}
-      <div className="app-header__left" style={{ display: 'flex', alignItems: 'center' }}>
+      <div className="app-header__left" style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
         {/* Logo wordmark */}
         <button
-          onClick={() => onTabChange('overview')}
+          onClick={() => handleTabClick('overview')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -65,16 +72,16 @@ export const Header: React.FC<HeaderProps> = ({
               color: 'var(--text-1)',
               letterSpacing: '-0.02em',
               fontFamily: 'var(--font)',
+              whiteSpace: 'nowrap',
             }}
           >
             VoiceShield
           </span>
         </button>
-
       </div>
 
       <div className="app-header__actions">
-        {/* Product navigation */}
+        {/* Desktop Product navigation */}
         <nav
           className="app-nav"
           style={{
@@ -88,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
             return (
               <button
                 key={tab.id}
-                onClick={() => onTabChange(tab.id)}
+                onClick={() => handleTabClick(tab.id)}
                 className={active ? 'nav-tab nav-tab--active' : 'nav-tab'}
                 style={{
                   background: active ? 'var(--accent-dim)' : 'transparent',
@@ -109,6 +116,7 @@ export const Header: React.FC<HeaderProps> = ({
             );
           })}
         </nav>
+
         {/* Right: Live mic toggle */}
         <button
           onClick={onToggleMic}
@@ -118,7 +126,50 @@ export const Header: React.FC<HeaderProps> = ({
           {isMicActive ? <MicOff size={13} /> : <Mic size={13} />}
           {isMicActive ? 'Stop mic' : 'Live mic'}
         </button>
+
+        {/* Mobile menu toggle */}
+        <button
+          className="mobile-nav-toggle"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+        >
+          {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
       </div>
+
+      {/* Mobile navigation dropdown */}
+      {isMobileMenuOpen && (
+        <div className="mobile-nav-menu">
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className={active ? 'nav-tab nav-tab--active' : 'nav-tab'}
+                style={{
+                  background: active ? 'var(--accent-dim)' : 'transparent',
+                  border: 'none',
+                  borderRadius: 'var(--r-md)',
+                  padding: '10px 14px',
+                  fontSize: '14px',
+                  fontWeight: active ? 600 : 500,
+                  color: active ? 'var(--accent)' : 'var(--text-2)',
+                  cursor: 'pointer',
+                  transition: 'all 0.12s',
+                  fontFamily: 'var(--font)',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  width: '100%',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </header>
   );
 };
