@@ -41,7 +41,7 @@ data/processed/*
 *.h5
 *.keras
 *.joblib
-*.pkl
+
 
 # Model checkpoints
 model/checkpoints/*
