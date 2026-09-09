@@ -48,7 +48,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }}
         className="overview-intro"
       >
-        <div className="overview-content" style={{ maxWidth: '600px' }}>
+        <div className="overview-content" style={{ maxWidth: '720px' }}>
           <div
             style={{
               display: 'inline-flex',
@@ -79,7 +79,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               color: 'var(--text-2)',
               lineHeight: 1.65,
               marginBottom: '24px',
-              maxWidth: '500px',
+              maxWidth: '620px',
             }}
           >
             VoiceShield analyzes a voice recording for signs of synthetic or

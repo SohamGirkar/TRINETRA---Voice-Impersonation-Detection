@@ -14,6 +14,20 @@ if str(MODEL_SRC) not in sys.path:
 
 from inference import predict_audio_buffer
 
+# Checkpoint path resolution:
+# Canonical intended path is model/checkpoints/voice_spoof_detector.pkl,
+# but the trained checkpoint in the repository is at model/model/checkpoints/voice_spoof_detector.pkl.
+TRAINED_CHECKPOINT = (
+    PROJECT_ROOT / "model" / "model" / "checkpoints" / "voice_spoof_detector.pkl"
+)
+CANONICAL_CHECKPOINT = (
+    PROJECT_ROOT / "model" / "checkpoints" / "voice_spoof_detector.pkl"
+)
+
+CHECKPOINT_PATH = (
+    TRAINED_CHECKPOINT if TRAINED_CHECKPOINT.exists() else CANONICAL_CHECKPOINT
+)
+
 
 class InferenceService:
 
@@ -21,12 +35,7 @@ class InferenceService:
 
         result = predict_audio_buffer(
             audio_bytes,
-            checkpoint_path=str(
-                PROJECT_ROOT
-                / "model"
-                / "checkpoints"
-                / "voice_spoof_detector.pkl"
-            )
+            checkpoint_path=str(CHECKPOINT_PATH)
         )
 
         return result

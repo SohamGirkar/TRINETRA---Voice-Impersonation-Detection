@@ -98,7 +98,9 @@ export function App() {
           />
         )}
 
-        {activeTab === 'history' && <History />}
+        {activeTab === 'history' && (
+          <History onNavigateToAnalyze={() => setActiveTab('analyze-call')} />
+        )}
 
         {activeTab === 'settings' && <Settings />}
         </main>
