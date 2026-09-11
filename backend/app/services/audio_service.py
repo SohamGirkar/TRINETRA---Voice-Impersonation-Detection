@@ -7,10 +7,13 @@ ALLOWED_EXTENSIONS = {
     ".mp3",
     ".ogg",
     ".m4a",
+    ".webm",
 }
 
 
-async def read_audio_file(file: UploadFile) -> bytes:
+async def read_audio_file(
+    file: UploadFile
+) -> bytes:
 
     if not file.filename:
         raise HTTPException(
@@ -18,12 +21,18 @@ async def read_audio_file(file: UploadFile) -> bytes:
             detail="No filename provided."
         )
 
-    extension = "." + file.filename.split(".")[-1].lower()
+    extension = (
+        "."
+        + file.filename.split(".")[-1].lower()
+    )
 
     if extension not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported audio format: {extension}"
+            detail=(
+                f"Unsupported audio format: "
+                f"{extension}"
+            )
         )
 
     audio_bytes = await file.read()

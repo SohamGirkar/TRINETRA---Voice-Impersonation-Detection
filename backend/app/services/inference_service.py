@@ -1,44 +1,93 @@
 import sys
+import os
+import subprocess
+import tempfile
 from pathlib import Path
 
-
-# Project root
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
-# Add model/src to Python path
 MODEL_SRC = PROJECT_ROOT / "model" / "src"
 
 if str(MODEL_SRC) not in sys.path:
     sys.path.insert(0, str(MODEL_SRC))
 
-
 from inference import predict_audio_buffer
 
-# Checkpoint path resolution:
-# Canonical intended path is model/checkpoints/voice_spoof_detector.pkl,
-# but the trained checkpoint in the repository is at model/model/checkpoints/voice_spoof_detector.pkl.
-TRAINED_CHECKPOINT = (
-    PROJECT_ROOT / "model" / "model" / "checkpoints" / "voice_spoof_detector.pkl"
-)
-CANONICAL_CHECKPOINT = (
-    PROJECT_ROOT / "model" / "checkpoints" / "voice_spoof_detector.pkl"
-)
 
-CHECKPOINT_PATH = (
-    TRAINED_CHECKPOINT if TRAINED_CHECKPOINT.exists() else CANONICAL_CHECKPOINT
+FFMPEG_PATH = (
+    r"C:\Users\soham\AppData\Local\Microsoft\WinGet\Packages"
+    r"\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe"
+    r"\ffmpeg-9.0.1-full_build\bin\ffmpeg.exe"
 )
 
 
 class InferenceService:
 
+    def _convert_to_wav(self, audio_bytes: bytes) -> bytes:
+        """
+        Convert browser WebM/Opus audio into WAV.
+        """
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            temp_dir = Path(temp_dir)
+
+            input_file = temp_dir / "input.webm"
+            output_file = temp_dir / "output.wav"
+
+            input_file.write_bytes(
+                audio_bytes
+            )
+
+            command = [
+                FFMPEG_PATH,
+                "-y",
+                "-i",
+                str(input_file),
+                "-ac",
+                "1",
+                "-ar",
+                "16000",
+                "-sample_fmt",
+                "s16",
+                str(output_file),
+            ]
+
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+            )
+
+            if result.returncode != 0:
+                raise RuntimeError(
+                    "FFmpeg conversion failed: "
+                    + result.stderr
+                )
+
+            if not output_file.exists():
+                raise RuntimeError(
+                    "FFmpeg did not create WAV output."
+                )
+
+            return output_file.read_bytes()
+
     def predict(self, audio_bytes: bytes):
 
-        result = predict_audio_buffer(
-            audio_bytes,
-            checkpoint_path=str(CHECKPOINT_PATH)
+        # Browser microphone sends WebM/Opus.
+        wav_bytes = self._convert_to_wav(
+            audio_bytes
         )
 
-        return result
+        return predict_audio_buffer(
+            wav_bytes,
+            checkpoint_path=str(
+                PROJECT_ROOT
+                / "model"
+                / "checkpoints"
+                / "voice_spoof_detector.pkl"
+            ),
+        )
 
 
 inference_service = InferenceService()
