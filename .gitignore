@@ -45,6 +45,8 @@ data/processed/*
 
 # Model checkpoints
 model/checkpoints/*
+!model/checkpoints/
+!model/checkpoints/voice_spoof_detector.pkl
 !model/checkpoints/.gitkeep
 
 # =========================
